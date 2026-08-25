@@ -1,0 +1,9 @@
+{
+  "databases": {
+    "Тест": {
+      "conn": "<ip_адрес>|5432|pochta_db|pochta_admin|<password>",
+      "lat": 58.456,
+      "lng": 37.566
+    }
+  }
+}

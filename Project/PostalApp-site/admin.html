@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Панель администратора</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="assets/icons/app-main.png" type="image/png">
+</head>
+<body>
+
+<!-- Экран входа -->
+<div id="access-gate" class="admin-gate">
+  <div class="admin-gate-card">
+    <div style="font-size:3rem;margin-bottom:16px">⚙️</div>
+    <h2 style="font-family:'Geologica',sans-serif;font-size:1.5rem;font-weight:800;margin-bottom:12px">Панель администратора</h2>
+    <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:28px">Войдите через аккаунт администратора</p>
+    <button class="btn-google" onclick="handleAdminSignIn()">
+      <svg width="20" height="20" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Войти через Google
+    </button>
+    <p id="gate-error" style="color:#f87171;font-size:0.82rem;margin-top:16px;display:none"></p>
+  </div>
+</div>
+
+<!-- Панель -->
+<div id="admin-app" class="admin-layout" style="display:none">
+  <header class="admin-header">
+    <div style="display:flex;align-items:center;gap:12px;min-width:0;overflow:hidden">
+      <a href="/" style="color:var(--text-muted);font-size:0.85rem;display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        На сайт
+      </a>
+      <span style="color:var(--border);flex-shrink:0">|</span>
+      <div style="display:flex;align-items:center;gap:10px;font-family:'Geologica',sans-serif;font-weight:700;min-width:0">
+        <div style="width:28px;height:28px;border-radius:6px;overflow:hidden;background:var(--gold-dim);display:grid;place-items:center;flex-shrink:0">
+          <img src="assets/icons/app-main.png" style="width:100%;height:100%;object-fit:contain" onerror="this.parentElement.textContent='⚙️'">
+        </div>
+        <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Панель администратора</span>
+        <span id="superadmin-badge" style="display:none;flex-shrink:0;padding:2px 8px;border-radius:100px;font-size:0.7rem;background:rgba(212,168,83,0.15);color:var(--gold);border:1px solid rgba(212,168,83,0.3)">Главный</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+      <span id="admin-email-display" class="admin-email-display"></span>
+      <button class="btn btn-secondary" style="padding:6px 14px;font-size:0.82rem;white-space:nowrap" onclick="handleAdminLogout()">Выйти</button>
+    </div>
+  </header>
+
+  <div class="admin-body">
+    <h1 class="admin-title">Панель управления</h1>
+
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Всего пользователей</div></div>
+      <div class="stat-box"><div class="stat-value" id="stat-admins">—</div><div class="stat-label">Администраторов</div></div>
+      <div class="stat-box"><div class="stat-value" id="stat-mods">—</div><div class="stat-label">Модераторов</div></div>
+      <div class="stat-box"><div class="stat-value" id="stat-pending">—</div><div class="stat-label">Ожидают решения</div></div>
+    </div>
+
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchTab('requests',this)">
+        Заявки <span class="tab-badge" id="pending-badge" style="display:none">0</span>
+      </button>
+      <button class="admin-tab" onclick="switchTab('users',this)">Пользователи</button>
+    </div>
+
+    <!-- ТАБ: Заявки -->
+    <div class="admin-panel active" id="tab-requests">
+      <div class="admin-card">
+        <h3>Заявки на доступ к инструментальному приложению</h3>
+        <p style="font-size:0.83rem;color:var(--text-muted);margin-bottom:16px">
+          <strong>Модератором</strong> — могут назначать все администраторы.
+          <strong>Администратором</strong> — только главный администратор.
+        </p>
+        <div style="margin-bottom:16px">
+          <input type="text" id="requests-search" class="admin-input" placeholder="🔍 Поиск по имени или почте..." oninput="filterRequests(this.value)" style="max-width:360px">
+        </div>
+        <div style="overflow-x:auto">
+          <table class="users-table">
+            <thead><tr><th>Пользователь</th><th>Email</th><th>Дата заявки</th><th>Действия</th></tr></thead>
+            <tbody id="requests-tbody">
+              <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:40px"><div class="spinner" style="margin:0 auto 12px"></div>Загрузка...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ТАБ: Пользователи -->
+    <div class="admin-panel" id="tab-users">
+      <div class="admin-card">
+        <h3>Все пользователи</h3>
+        <p style="font-size:0.83rem;color:var(--text-muted);margin-bottom:16px">
+          Модератор — доступ к доп. приложению. Администратор — доступ к панели управления.
+          Назначать администраторов может только главный администратор.
+        </p>
+        <div style="margin-bottom:16px">
+          <input type="text" id="users-search" class="admin-input" placeholder="🔍 Поиск по имени или почте..." oninput="filterUsers(this.value)" style="max-width:360px">
+        </div>
+        <div style="overflow-x:auto">
+          <table class="users-table">
+            <thead><tr><th>Пользователь</th><th>Email</th><th>Регистрация</th><th>Роль</th></tr></thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:40px"><div class="spinner" style="margin:0 auto 12px"></div>Загрузка...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="js/config.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

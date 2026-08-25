@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSuperAdmin() {
+      return request.auth != null &&
+        request.auth.token.email == "rozkovvitalij04@gmail.com";
+    }
+
+    function isAdmin() {
+      return isSuperAdmin() ||
+        (request.auth != null &&
+         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true);
+    }
+
+    function isModerator() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isModerator == true;
+    }
+
+    match /users/{uid} {
+      allow get:    if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow list:   if request.auth != null && isAdmin();
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && (
+        isAdmin() ||
+        (request.auth.uid == uid &&
+         !request.resource.data.diff(resource.data).affectedKeys()
+           .hasAny(['isModerator', 'isAdmin']))
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /downloads/{docId} {
+      allow read:  if isAdmin() || isModerator();
+      allow write: if isAdmin();
+    }
+
+  }
+}

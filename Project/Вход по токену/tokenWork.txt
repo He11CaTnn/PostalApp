@@ -1,0 +1,46 @@
+Как обращаться к эндпоинту из C#
+Добавь в LoginForm.cs (или куда удобно) отдельный метод:
+csharp// Константа токена — только в debug-сборке
+private const string DevToken = "token";  // твой токен
+
+private async Task<string> PostDevLoginRequest(string email, string password)
+{
+    using (var http = new HttpClient(CreateSslHandler()))
+    {
+        http.Timeout = TimeSpan.FromSeconds(15);
+
+        string json = "{" +
+            $"\"dev_token\":\"{EscapeJson(DevToken)}\"," +
+            $"\"login\":\"{EscapeJson(email)}\"," +
+            $"\"password\":\"{EscapeJson(password)}\"" +
+            "}";
+
+        var content  = new StringContent(json, Encoding.UTF8, "application/json");
+        var response = await http.PostAsync(
+            "https://<ip_адрес>/api/getconfig_extra_dev", content);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            throw new UnauthorizedAccessException();
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
+    }
+}
+И вызывай вместо PostLoginRequest когда нужно тестировать:
+csharp// В HandleLoginClick замени вызов на:
+body = await PostDevLoginRequest(email, password);
+// остальной код парсинга строки подключения — тот же самый
+
+Как парсить строку подключения
+Формат строки: host|port|database|user|password
+Это уже делается в HandleLoginClick — тот же код работает и для dev-эндпоинта:
+csharp// body = {"config": "127.0.0.1|5432|pochta_db|admin|secret", "lat": 55.7, "lng": 37.6}
+
+var mCfg   = Regex.Match(body, "\"config\"\\s*:\\s*\"([^\"]+)\"");
+string[] parts = mCfg.Groups[1].Value.Split('|');
+
+// parts[0] = host     → Program.ServerIP
+// parts[1] = port     → Program.ServerPort  (int.Parse)
+// parts[2] = database → Program.ServerDatabase
+// parts[3] = user     → Program.ServerUser
+// parts[4] = password → Program.ServerPassword
